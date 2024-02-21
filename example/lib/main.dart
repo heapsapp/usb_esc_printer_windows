@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image/image.dart';
 import 'package:usb_esc_printer_windows/usb_esc_printer_windows.dart'
     as usb_esc_printer_windows;
+import 'package:windows_usb_printer/windows_usb_printer.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,13 +18,23 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final String _printerName = "EPSON";
+  String _printerName = "EPSON";
   late Future<CapabilityProfile> _profile;
+  var _printers = <WindowsPrinterInfo>[];
 
   @override
   initState() {
     _profile = CapabilityProfile.load();
+    _searchForPrinters();
     super.initState();
+  }
+
+  void _searchForPrinters() async {
+    final printers = await WindowsUsbPrinterProvider.queryLocalUsbDevice();
+    setState(() {
+      _printers.clear();
+      _printers.addAll(printers ?? []);
+    });
   }
 
   @override
@@ -31,19 +42,22 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text(
-              'Fluter ESC/POS Printer Pakage For Windows Platform Only'),
+          title: const Text('Fluter ESC/POS Printer Pakage For Windows Platform Only'),
         ),
         body: SingleChildScrollView(
           child: Container(
             padding: const EdgeInsets.all(10),
             child: Column(
-              children: [
-                ElevatedButton(
-                  onPressed: printReq,
-                  child: const Text("Demo Print"),
-                )
-              ],
+              // children: [
+              //   ElevatedButton(
+              //     onPressed: printReq,
+              //     child: const Text("Demo Print"),
+              //   )
+              // ],
+              children: _printers.map((printer) => InkWell(onTap: (){
+                _printerName = printer.pPrinterName;
+                printReq();
+              },child: Text(printer.pPrinterName))).toList(),
             ),
           ),
         ),
